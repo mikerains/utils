@@ -152,7 +152,7 @@ namespace mysqlgen
             var cols = getColNames(cn, tablename, pkcolname);
             System.IO.StreamWriter sw = GetStreamWriter(Path.Combine(SelectedFolder.Text, humanTablename + ".cs"));
 
-            writeline(sw, 0, "// <copyright file=\"content.cs\" company=\"Gallup\">");
+            writeline(sw, 0, $"// <copyright file=\"{humanTablename}.cs\" company=\"Gallup\">");
             writeline(sw, 0, "// Copyright (c) Gallup. All rights reserved.");
             writeline(sw, 0, "// </copyright>");
             writeline(sw, 0, "");
@@ -160,6 +160,7 @@ namespace mysqlgen
             writeline(sw, 0, "{");
             writeline(sw, 1, "using System;");
             writeline(sw, 1, "using GSS.RespondentReporting.Core.Repositories;");
+            writeline(sw, 0, "");
             //writeline(sw, 1, "using GSS.RespondentReporting.Core.Enums;");
             writeline(sw, 1, "/// <summary>");
             writeline(sw, 1, $"/// entity for table name \"{ tablename}\"");
@@ -172,36 +173,53 @@ namespace mysqlgen
             for(int loop = 0; loop < 2; loop++) { 
                 foreach (GenColumn col in cols)
                 {
-                    
+                    if (string.Compare(col.colname, "created_on", true)==0
+                        || string.Compare(col.colname, "created_at", true) == 0
+                        || string.Compare(col.colname, "created_by", true) == 0
+                        || string.Compare(col.colname, "last_mod_on", true) == 0
+                        || string.Compare(col.colname, "last_mod_at", true) == 0
+                        || string.Compare(col.colname, "last_mod_by", true) == 0
+                        || string.Compare(col.colname, "status_id", true) == 0)
+                    {
+                        continue;
+                    }
                     string humanColname = col.colname.ToPascalCase();
                     string dtype = ConvertSchemaDatatypeToCSharp(col.datatype);
+
+
                     if (0==loop && col.isPK)
                     {
-                        writeline(sw, 0, "");
+                        writeline(sw, 2, "/// <summary>");
+                        writeline(sw, 2, $"/// Gets or sets {humanColname}");
+                        writeline(sw, 2, "/// </summary>");
                         writeline(sw, 2, $"[DBColumn(\"{col.colname}\", IsPrimaryKey =true)]");
                         write(sw, 2, "public " + dtype);
-                        if (col.isNullable && dtype != "String")
+                        if (col.isNullable && dtype != "string")
                         {
                             write(sw, 0, "?");
                         }
-                        writeline(sw, 0, " " + humanColname + "{ get; set;}");
+                        writeline(sw, 0, " " + humanColname + " { get; set; }");
+
                     } else if (1==loop && !col.isPK)
                     {
                         writeline(sw, 0, "");
+                        writeline(sw, 2, "/// <summary>");
+                        writeline(sw, 2, $"/// Gets or sets {humanColname}");
+                        writeline(sw, 2, "/// </summary>");
                         writeline(sw, 2, $"[DBColumn(\"{col.colname}\")]");
                         write(sw, 2, "public " + dtype);
                         if (col.isNullable && dtype != "string")
                         {
                             write(sw, 0, "?");
                         }
-                        writeline(sw, 0, " " + humanColname + "{ get; set;}");
+                        writeline(sw, 0, " " + humanColname + " { get; set; }");
                     }
-
-
+                    
+                    
                 }
             }
-            writeline(sw, 1, "} //class");
-            writeline(sw, 0, "} //namespace");
+            writeline(sw, 1, "}");
+            writeline(sw, 0, "}");
             sw.Flush();
             sw.Close();
         }
@@ -216,13 +234,15 @@ namespace mysqlgen
 
         private void writeline(StreamWriter sw, int indents, string text)
         {
-            sw.Write(new string('\t', indents));
+            //sw.Write(new string('\t', indents));
+            sw.Write(new string(' ', indents*4));
             sw.WriteLine(text);
         }
 
         private void write(StreamWriter sw, int indents, string text)
         {
-            sw.Write(new string('\t', indents));
+            //sw.Write(new string('\t', indents));
+            sw.Write(new string(' ', indents * 4));
             sw.Write(text);
         }
 
@@ -387,6 +407,21 @@ namespace mysqlgen
             {
                 SelectedFolder.Text = fbd.SelectedPath;
             }
+        }
+
+        private void TypeBtn_Click(object sender, EventArgs e)
+        {
+            List<int> x = new List<int>();
+            int y = 42;
+            int? z = 12;
+            Type typex = x.GetType().GetGenericTypeDefinition();
+            Type typey = y.GetType();
+            Type typez = z.GetType();
+            OutputBox.Text = typex.FullName + " " + typex.Equals(typeof(Nullable<>)).ToString() + System.Environment.NewLine
+                + typey.FullName + " " + typey.Equals(typeof(Nullable<>)).ToString() + System.Environment.NewLine
+                + typez.FullName + " " + typez.Equals(typeof(Nullable<>)).ToString();
+           // OutputBox.Text = typeof(int?).ToString();
+            
         }
     }
 
